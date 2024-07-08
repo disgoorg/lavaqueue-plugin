@@ -19,7 +19,7 @@ type Queue struct {
 
 type QueueTrack struct {
 	Encoded  string           `json:"encoded"`
-	UserData lavalink.RawData `json:"user_data"`
+	UserData lavalink.RawData `json:"userData,omitempty"`
 }
 
 type QueueUpdate struct {

@@ -13,13 +13,13 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
-func GetQueue(ctx context.Context, client disgolink.RestClient, sessionID string, guildID snowflake.ID) (*Queue, error) {
-	rq, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("/v4/sessions/%s/players/%s/queue", sessionID, guildID), nil)
+func GetQueue(ctx context.Context, node disgolink.Node, guildID snowflake.ID) (*Queue, error) {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("/v4/sessions/%s/players/%s/queue", node.SessionID(), guildID), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	rs, err := client.Do(rq)
+	rs, err := node.Rest().Do(rq)
 	if err != nil {
 		return nil, err
 	}
@@ -33,53 +33,147 @@ func GetQueue(ctx context.Context, client disgolink.RestClient, sessionID string
 	return &queue, nil
 }
 
-func UpdateQueue(ctx context.Context, client disgolink.RestClient, sessionID string, guildID snowflake.ID, queue QueueUpdate) error {
+func UpdateQueue(ctx context.Context, node disgolink.Node, guildID snowflake.ID, queue QueueUpdate) (*lavalink.Track, error) {
 	rqBody, err := marshalBody(queue)
-	if err != nil {
-		return err
-	}
-
-	rq, err := http.NewRequestWithContext(ctx, http.MethodPatch, fmt.Sprintf("/v4/sessions/%s/players/%s/queue", sessionID, guildID), rqBody)
-	if err != nil {
-		return err
-	}
-
-	rs, err := client.Do(rq)
-	if err != nil {
-		return err
-	}
-	defer rs.Body.Close()
-
-	return unmarshalBody(rs, nil)
-}
-
-func AddQueueTracks(ctx context.Context, client disgolink.RestClient, sessionID string, guildID snowflake.ID, tracks []QueueTrack) error {
-	rqBody, err := marshalBody(tracks)
-	if err != nil {
-		return err
-	}
-
-	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/tracks", sessionID, guildID), rqBody)
-	if err != nil {
-		return err
-	}
-
-	rs, err := client.Do(rq)
-	if err != nil {
-		return err
-	}
-	defer rs.Body.Close()
-
-	return unmarshalBody(rs, nil)
-}
-
-func GetHistory(ctx context.Context, client disgolink.RestClient, sessionID string, guildID snowflake.ID) ([]lavalink.Track, error) {
-	rq, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("/v4/sessions/%s/players/%s/history", sessionID, guildID), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	rs, err := client.Do(rq)
+	rq, err := http.NewRequestWithContext(ctx, http.MethodPatch, fmt.Sprintf("/v4/sessions/%s/players/%s/queue", node.SessionID(), guildID), rqBody)
+	if err != nil {
+		return nil, err
+	}
+	rq.Header.Add("Content-Type", "application/json")
+
+	rs, err := node.Rest().Do(rq)
+	if err != nil {
+		return nil, err
+	}
+	defer rs.Body.Close()
+
+	var track lavalink.Track
+	if err = unmarshalBody(rs, &track); err != nil {
+		return nil, err
+	}
+	return &track, nil
+}
+
+func QueueNextTrack(ctx context.Context, node disgolink.Node, guildID snowflake.ID) (*lavalink.Track, error) {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/next", node.SessionID(), guildID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	rs, err := node.Rest().Do(rq)
+	if err != nil {
+		return nil, err
+	}
+	defer rs.Body.Close()
+
+	var track lavalink.Track
+	if err = unmarshalBody(rs, &track); err != nil {
+		return nil, err
+	}
+	return &track, nil
+}
+
+func QueuePreviousTrack(ctx context.Context, node disgolink.Node, guildID snowflake.ID) (*lavalink.Track, error) {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/previous", node.SessionID(), guildID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	rs, err := node.Rest().Do(rq)
+	if err != nil {
+		return nil, err
+	}
+	defer rs.Body.Close()
+
+	var track lavalink.Track
+	if err = unmarshalBody(rs, &track); err != nil {
+		return nil, err
+	}
+	return &track, nil
+}
+
+func AddQueueTracks(ctx context.Context, node disgolink.Node, guildID snowflake.ID, tracks []QueueTrack) (*lavalink.Track, error) {
+	rqBody, err := marshalBody(tracks)
+	if err != nil {
+		return nil, err
+	}
+
+	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/tracks", node.SessionID(), guildID), rqBody)
+	if err != nil {
+		return nil, err
+	}
+	rq.Header.Add("Content-Type", "application/json")
+
+	rs, err := node.Rest().Do(rq)
+	if err != nil {
+		return nil, err
+	}
+	defer rs.Body.Close()
+
+	var track lavalink.Track
+	if err = unmarshalBody(rs, &track); err != nil {
+		return nil, err
+	}
+	return &track, nil
+}
+
+func RemoveQueueTrack(ctx context.Context, node disgolink.Node, guildID snowflake.ID, trackID int) error {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodDelete, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/tracks/%d", node.SessionID(), guildID, trackID), nil)
+	if err != nil {
+		return err
+	}
+
+	rs, err := node.Rest().Do(rq)
+	if err != nil {
+		return err
+	}
+	defer rs.Body.Close()
+
+	return unmarshalBody(rs, nil)
+}
+
+func ShuffleQueue(ctx context.Context, node disgolink.Node, guildID snowflake.ID) error {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/shuffle", node.SessionID(), guildID), nil)
+	if err != nil {
+		return err
+	}
+
+	rs, err := node.Rest().Do(rq)
+	if err != nil {
+		return err
+	}
+	defer rs.Body.Close()
+
+	return unmarshalBody(rs, nil)
+}
+
+func ClearQueue(ctx context.Context, node disgolink.Node, guildID snowflake.ID) error {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodDelete, fmt.Sprintf("/v4/sessions/%s/players/%s/queue", node.SessionID(), guildID), nil)
+	if err != nil {
+		return err
+	}
+
+	rs, err := node.Rest().Do(rq)
+	if err != nil {
+		return err
+	}
+	defer rs.Body.Close()
+
+	return unmarshalBody(rs, nil)
+
+}
+
+func GetHistory(ctx context.Context, node disgolink.Node, guildID snowflake.ID) ([]lavalink.Track, error) {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("/v4/sessions/%s/players/%s/history", node.SessionID(), guildID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	rs, err := node.Rest().Do(rq)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +185,21 @@ func GetHistory(ctx context.Context, client disgolink.RestClient, sessionID stri
 	}
 
 	return history, nil
+}
+
+func ClearHistory(ctx context.Context, node disgolink.Node, guildID snowflake.ID) error {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodDelete, fmt.Sprintf("/v4/sessions/%s/players/%s/history", node.SessionID(), guildID), nil)
+	if err != nil {
+		return err
+	}
+
+	rs, err := node.Rest().Do(rq)
+	if err != nil {
+		return err
+	}
+	defer rs.Body.Close()
+
+	return unmarshalBody(rs, nil)
 }
 
 func marshalBody(v any) (io.Reader, error) {
