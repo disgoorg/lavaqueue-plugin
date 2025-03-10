@@ -15,7 +15,7 @@ type LavaQueueEventListener interface {
 }
 
 type QueueEndEvent struct {
-	GuildID_ snowflake.ID `json:"guild_id"`
+	GuildID_ snowflake.ID `json:"guildId"`
 }
 
 func (QueueEndEvent) Op() lavalink.Op {
