@@ -114,6 +114,10 @@ func AddQueueTracks(ctx context.Context, node disgolink.Node, guildID snowflake.
 	}
 	defer rs.Body.Close()
 
+	if rs.StatusCode == http.StatusNoContent {
+		return nil, nil
+	}
+
 	var track lavalink.Track
 	if err = unmarshalBody(rs, &track); err != nil {
 		return nil, err
