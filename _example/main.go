@@ -43,6 +43,7 @@ func main() {
 	r := handler.New()
 	r.Use(middleware.Go)
 	r.SlashCommand("/play", b.onPlay)
+	r.SlashCommand("/next", b.onNext)
 
 	// create a new bot
 	client, err := disgo.New(token,
@@ -83,9 +84,7 @@ func main() {
 	}
 	defer client.Close(context.Background())
 
-	lavalinkCtx, lavalinkCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer lavalinkCancel()
-	if _, err = b.Lavalink.AddNode(lavalinkCtx, disgolink.NodeConfig{
+	if _, err = b.Lavalink.AddNode(context.Background(), disgolink.NodeConfig{
 		Name:     nodeName,
 		Address:  nodeAddress,
 		Password: nodePassword,
