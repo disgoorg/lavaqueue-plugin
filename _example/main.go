@@ -44,6 +44,7 @@ func main() {
 	r.Use(middleware.Go)
 	r.SlashCommand("/play", b.onPlay)
 	r.SlashCommand("/next", b.onNext)
+	r.SlashCommand("/clear", b.onClear)
 
 	// create a new bot
 	client, err := disgo.New(token,

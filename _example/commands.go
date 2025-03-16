@@ -35,24 +35,8 @@ var commands = []discord.ApplicationCommandCreate{
 		Description: "Skips the current song",
 	},
 	discord.SlashCommandCreate{
-		Name:        "last",
-		Description: "Plays the last played song",
-	},
-	discord.SlashCommandCreate{
-		Name:        "queue",
-		Description: "Shows the current queue",
-	},
-	discord.SlashCommandCreate{
-		Name:        "pause",
-		Description: "Pauses the current song",
-	},
-	discord.SlashCommandCreate{
-		Name:        "resume",
-		Description: "Resumes the current song",
-	},
-	discord.SlashCommandCreate{
-		Name:        "stop",
-		Description: "Stops the current song",
+		Name:        "clear",
+		Description: "Clears the queue",
 	},
 }
 
@@ -171,6 +155,31 @@ func (b *exampleBot) onNext(data discord.SlashCommandInteractionData, e *handler
 
 	_, err = e.UpdateInteractionResponse(discord.MessageUpdate{
 		Content: json.Ptr(fmt.Sprintf("Playing: %s", track.Info.Title)),
+	})
+	return err
+}
+
+func (b *exampleBot) onClear(data discord.SlashCommandInteractionData, e *handler.CommandEvent) error {
+	player := b.Lavalink.Player(*e.GuildID())
+	if player == nil {
+		return e.CreateMessage(discord.MessageCreate{
+			Content: "Not connected to a voice channel",
+		})
+	}
+
+	if err := e.DeferCreateMessage(false); err != nil {
+		return err
+	}
+
+	if err := lavaqueue.ClearQueue(e.Ctx, player.Node(), *e.GuildID()); err != nil {
+		_, err = e.UpdateInteractionResponse(discord.MessageUpdate{
+			Content: json.Ptr("error while clearing queue"),
+		})
+		return err
+	}
+
+	_, err := e.UpdateInteractionResponse(discord.MessageUpdate{
+		Content: json.Ptr("Queue cleared"),
 	})
 	return err
 }

@@ -228,5 +228,9 @@ func unmarshalBody(rs *http.Response, v any) error {
 		return nil
 	}
 
+	if v == nil {
+		return nil
+	}
+
 	return json.NewDecoder(rs.Body).Decode(v)
 }
