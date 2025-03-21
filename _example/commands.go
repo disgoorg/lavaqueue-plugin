@@ -33,6 +33,12 @@ var commands = []discord.ApplicationCommandCreate{
 	discord.SlashCommandCreate{
 		Name:        "next",
 		Description: "Skips the current song",
+		Options: []discord.ApplicationCommandOption{
+			discord.ApplicationCommandOptionInt{
+				Name:        "count",
+				Description: "The number of songs to skip",
+			},
+		},
 	},
 	discord.SlashCommandCreate{
 		Name:        "clear",
@@ -139,7 +145,12 @@ func (b *exampleBot) onNext(data discord.SlashCommandInteractionData, e *handler
 		return err
 	}
 
-	track, err := lavaqueue.QueueNextTrack(e.Ctx, player.Node(), *e.GuildID())
+	count := data.Int("count")
+	if count < 1 {
+		count = 1
+	}
+
+	track, err := lavaqueue.QueueNextTrack(e.Ctx, player.Node(), *e.GuildID(), count)
 	if err != nil {
 		_, err = e.UpdateInteractionResponse(discord.MessageUpdate{
 			Content: json.Ptr("error while skipping track"),

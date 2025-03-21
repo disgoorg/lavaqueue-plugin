@@ -58,8 +58,8 @@ func UpdateQueue(ctx context.Context, node disgolink.Node, guildID snowflake.ID,
 	return &track, nil
 }
 
-func QueueNextTrack(ctx context.Context, node disgolink.Node, guildID snowflake.ID) (*lavalink.Track, error) {
-	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/next", node.SessionID(), guildID), nil)
+func QueueNextTrack(ctx context.Context, node disgolink.Node, guildID snowflake.ID, count int) (*lavalink.Track, error) {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/next?count=%d", node.SessionID(), guildID, count), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +77,8 @@ func QueueNextTrack(ctx context.Context, node disgolink.Node, guildID snowflake.
 	return &track, nil
 }
 
-func QueuePreviousTrack(ctx context.Context, node disgolink.Node, guildID snowflake.ID) (*lavalink.Track, error) {
-	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/previous", node.SessionID(), guildID), nil)
+func QueuePreviousTrack(ctx context.Context, node disgolink.Node, guildID snowflake.ID, count int) (*lavalink.Track, error) {
+	rq, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/v4/sessions/%s/players/%s/queue/previous?count=%d", node.SessionID(), guildID, count), nil)
 	if err != nil {
 		return nil, err
 	}
